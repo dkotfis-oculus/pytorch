@@ -11235,10 +11235,6 @@ tensor([[[1., 1., 1.,  ..., 1., 1., 1.],
             else:
                 self.assertFalse(x[idx] ^ y[idx])
 
-        invert_result = ~x
-        for idx in iter_indices(x):
-            self.assertEqual(1 - x[idx], invert_result[idx])
-
         x_clone = x.clone()
         x_clone &= y
         self.assertEqual(x_clone, and_result)
@@ -11251,9 +11247,18 @@ tensor([[[1., 1., 1.,  ..., 1., 1., 1.],
         x_clone ^= y
         self.assertEqual(x_clone, xor_result)
 
-    def test_invert(self):
-        x = torch.ByteTensor([0, 1, 1])
-        self.assertEqual((~x).tolist(), [1, 0, 0])
+    def test_op_invert(self):
+        for t in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            a = torch.arange(127, dtype=t)
+            self.assertEqual(~a, a.bitwise_not())
+        a = torch.BoolTensor([True, False])
+        self.assertEqual(~a, a.bitwise_not())
+
+        # test exceptions
+        for t in(torch.HalfTensor, torch.FloatTensor, torch.DoubleTensor):
+            a = torch.zeros(10, dtype=t.dtype)
+            with self.assertRaises(TypeError):
+                b = ~a
 
     def test_apply(self):
         x = torch.arange(1, 6)
